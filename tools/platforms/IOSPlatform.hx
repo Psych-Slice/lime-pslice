@@ -102,6 +102,13 @@ class IOSPlatform extends PlatformTarget
 			defaults.windows.push(defaults.window);
 		}
 
+		if (defaults.launchStoryboard == null)
+		{
+			defaults.launchStoryboard = new LaunchStoryboard();
+
+			defaults.launchStoryboard.template = "LaunchScreen.storyboard";
+		}
+
 		defaults.merge(project);
 		project = defaults;
 
@@ -170,6 +177,11 @@ class IOSPlatform extends PlatformTarget
 			project.haxeflags.push("-xml " + targetDirectory + "/types.xml");
 		}
 
+		if (project.targetFlags.exists("json"))
+		{
+			project.haxeflags.push("--json " + targetDirectory + "/types.json");
+		}
+
 		if (project.targetFlags.exists("final"))
 		{
 			project.haxedefs.set("final", "");
@@ -182,8 +194,6 @@ class IOSPlatform extends PlatformTarget
 
 		IOSHelper.getIOSVersion(project);
 		project.haxedefs.set("IPHONE_VER", project.environment.get("IPHONE_VER"));
-
-		project.haxedefs.set("HXCPP_CPP11", "1");
 
 		if (project.config.getString("ios.compiler") == "llvm" || project.config.getString("ios.compiler", "clang") == "clang")
 		{
@@ -331,10 +341,25 @@ class IOSPlatform extends PlatformTarget
 		context.IOS_COMPILER = project.config.getString("ios.compiler", "clang");
 		context.CPP_BUILD_LIBRARY = project.config.getString("cpp.buildLibrary", "hxcpp");
 
-		context.CPP_CACHE_WORKAROUND = "unset HXCPP_COMPILE_CACHE;";
+		var json = Json.parse(File.getContent(Haxelib.getPath(new Haxelib("hxcpp"), true) + "/haxelib.json"));
+
+		var version = Std.string(json.version);
+		var versionSplit = version.split(".");
+
+		while (versionSplit.length > 2)
+			versionSplit.pop();
+
+		if (Std.parseFloat(versionSplit.join(".")) > 3.1)
+		{
+			context.CPP_LIBPREFIX = "lib";
+		}
+		else
+		{
+			context.CPP_LIBPREFIX = "";
+		}
 
 		context.IOS_LINKER_FLAGS = ["-stdlib=libc++"].concat(project.config.getArrayString("ios.linker-flags"));
-		context.IOS_NON_EXEMPT_ENCRYPTION = project.config.getBool("ios.non-exempt-encryption", false);
+		context.IOS_NON_EXEMPT_ENCRYPTION = project.config.getBool("ios.non-exempt-encryption", true);
 
 		switch (project.window.orientation)
 		{
@@ -437,6 +462,10 @@ class IOSPlatform extends PlatformTarget
 		{
 			context.HAXELIB_PATH = '';
 		}
+
+		context.CATEGORY_TYPE = project.config.getString("ios.category_type", "public.app-category.entertainment");
+
+		context.SHARE_FILES = project.haxedefs.exists("SHARE_MOBILE_FILES");
 
 		return context;
 	}
@@ -575,21 +604,28 @@ class IOSPlatform extends PlatformTarget
 
 		var iconPath = Path.combine(projectDirectory, "Images.xcassets/AppIcon.appiconset");
 		System.mkdir(iconPath);
-
-		var icons = project.icons;
-
-		if (icons.length == 0)
-		{
-			icons = [new Icon(System.findTemplate(project.templatePaths, "default/icon.svg"))];
+		//* P-Slice code
+		if(!project.config.exists("ios.pslice-icon-dir")){
+			Log.error("You need to set \"ios.pslice-icon-dir\" to a folder with your icon. Yes, we need that too now!");
+			return;
 		}
+		System.recursiveCopy(project.config.getString("ios.pslice-icon-dir"),iconPath);
+		//*
 
-		for (iconSize in iconSizes)
-		{
-			if (!IconHelper.createIcon(icons, iconSize.size, iconSize.size, Path.combine(iconPath, iconSize.name)))
-			{
-				context.HAS_ICON = false;
-			}
-		}
+		// var icons = project.icons;
+
+		// if (icons.length == 0)
+		// {
+		// 	icons = [new Icon(System.findTemplate(project.templatePaths, "default/icon.svg"))];
+		// }
+
+		// for (iconSize in iconSizes)
+		// {
+		// 	if (!IconHelper.createIcon(icons, iconSize.size, iconSize.size, Path.combine(iconPath, iconSize.name)))
+		// 	{
+		// 		context.HAS_ICON = false;
+		// 	}
+		// }
 
 		if (project.launchStoryboard != null)
 		{
@@ -856,24 +892,20 @@ class IOSPlatform extends PlatformTarget
 
 		for (asset in project.assets)
 		{
-			if (asset.type != AssetType.TEMPLATE)
+			if (asset.embed != true)
 			{
-				var targetPath = Path.combine(projectDirectory + "/assets/", asset.resourceName);
-
-				// var sourceAssetPath:String = projectDirectory + "haxe/" + asset.sourcePath;
-
-				System.mkdir(Path.directory(targetPath));
-				AssetHelper.copyAssetIfNewer(asset, targetPath);
-
-				// System.mkdir (Path.directory (sourceAssetPath));
-				// System.linkFile (flatAssetPath, sourceAssetPath, true, true);
-			}
-			else
-			{
-				var targetPath = Path.combine(projectDirectory, asset.targetPath);
-
-				System.mkdir(Path.directory(targetPath));
-				AssetHelper.copyAsset(asset, targetPath, context);
+				if (asset.type != AssetType.TEMPLATE)
+				{
+					var targetPath = Path.combine(projectDirectory + "/assets/", asset.resourceName);
+					System.mkdir(Path.directory(targetPath));
+					AssetHelper.copyAssetIfNewer(asset, targetPath);
+				}
+				else
+				{
+					var targetPath = Path.combine(projectDirectory, asset.targetPath);
+					System.mkdir(Path.directory(targetPath));
+					AssetHelper.copyAsset(asset, targetPath, context);
+				}
 			}
 		}
 
