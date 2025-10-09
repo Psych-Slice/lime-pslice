@@ -15,6 +15,7 @@ import lime.ui.MouseWheelMode;
 import lime.ui.Touch;
 import lime.ui.Window;
 import lime.ui.WindowAttributes;
+import lime.system.Orientation;
 import lime.utils.Preloader;
 
 /**
