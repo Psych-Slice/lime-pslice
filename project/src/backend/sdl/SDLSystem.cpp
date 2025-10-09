@@ -448,8 +448,22 @@ namespace lime {
 			strcpy (_displayName, displayName);
 			hl_dyn_setp (display, id_name, &hlt_bytes, _displayName);
 
+			SDL_Rect bounds = { 0, 0, 0, 0 };
+			SDL_GetDisplayBounds (id, &bounds);
+
+			////
+			vdynamic* _bounds = (vdynamic*)hl_alloc_dynobj ();
+			hl_dyn_seti (_bounds, id_x, &hlt_i32, bounds.x);
+			hl_dyn_seti (_bounds, id_y, &hlt_i32, bounds.y);
+			hl_dyn_seti (_bounds, id_width, &hlt_i32, bounds.w);
+			hl_dyn_seti (_bounds, id_height, &hlt_i32, bounds.h);
+
+			hl_dyn_setp (display, id_bounds, &hlt_dynobj, _bounds);
+
+
 			Rectangle safeAreaInsets;
 			Display::GetSafeAreaInsets(id, &safeAreaInsets);
+
 			vdynamic* _safeArea = (vdynamic*)hl_alloc_dynobj ();
 			hl_dyn_seti (_safeArea, id_x, &hlt_i32, bounds.x + safeAreaInsets.x);
 			hl_dyn_seti (_safeArea, id_y, &hlt_i32, bounds.y + safeAreaInsets.y);
@@ -458,16 +472,6 @@ namespace lime {
 
 			hl_dyn_setp (display, id_safeArea, &hlt_dynobj, _safeArea);
 
-			SDL_Rect bounds = { 0, 0, 0, 0 };
-			SDL_GetDisplayBounds (id, &bounds);
-
-			vdynamic* _bounds = (vdynamic*)hl_alloc_dynobj ();
-			hl_dyn_seti (_bounds, id_x, &hlt_i32, bounds.x);
-			hl_dyn_seti (_bounds, id_y, &hlt_i32, bounds.y);
-			hl_dyn_seti (_bounds, id_width, &hlt_i32, bounds.w);
-			hl_dyn_seti (_bounds, id_height, &hlt_i32, bounds.h);
-
-			hl_dyn_setp (display, id_bounds, &hlt_dynobj, _bounds);
 
 			Rectangle safeAreaInsets;
 			Display::GetSafeAreaInsets(id, &safeAreaInsets);
