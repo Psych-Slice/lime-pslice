@@ -4,6 +4,7 @@
 
 #import <sys/utsname.h>
 #include <system/System.h>
+#include <system/OrientationEvent.h>
 
 #ifdef IPHONE
 @interface OrientationObserver: NSObject

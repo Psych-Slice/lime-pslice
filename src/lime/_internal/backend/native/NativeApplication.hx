@@ -13,6 +13,7 @@ import lime.system.Clipboard;
 import lime.system.Display;
 import lime.system.DisplayMode;
 import lime.system.JNI;
+import lime.system.Orientation;
 import lime.system.Sensor;
 import lime.system.SensorType;
 import lime.system.System;
@@ -22,7 +23,6 @@ import lime.ui.JoystickHatPosition;
 import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 import lime.ui.Touch;
-import lime.system.Orientation;
 import lime.ui.Window;
 
 #if !lime_debug
@@ -51,6 +51,7 @@ class NativeApplication
 	private var gamepadEventInfo = new GamepadEventInfo();
 	private var joystickEventInfo = new JoystickEventInfo();
 	private var keyEventInfo = new KeyEventInfo();
+	private var orientationEventInfo = new OrientationEventInfo();
 	private var mouseEventInfo = new MouseEventInfo();
 	private var renderEventInfo = new RenderEventInfo(RENDER);
 	private var sensorEventInfo = new SensorEventInfo();
