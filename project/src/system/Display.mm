@@ -10,6 +10,7 @@
 
 namespace lime {
 
+	void Display::GetSafeAreaInsets (int displayIndex, Rectangle * rect) {
 
 	void Display::GetSafeAreaInsets (int displayIndex, Rectangle * rect) {
 

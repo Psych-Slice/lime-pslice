@@ -15,6 +15,7 @@ import lime.ui.Gamepad;
 import lime.ui.GamepadButton;
 import lime.ui.Joystick;
 import lime.ui.Window;
+import lime.system.Orientation;
 
 @:access(lime._internal.backend.html5.HTML5Window)
 @:access(lime.app.Application)

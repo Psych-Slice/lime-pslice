@@ -23,6 +23,7 @@ import lime.ui.JoystickHatPosition;
 import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 import lime.ui.Touch;
+import lime.system.Orientation;
 import lime.ui.Window;
 
 #if !lime_debug

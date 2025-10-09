@@ -1184,7 +1184,6 @@ class NativeCFFI
 		eventObject:MouseEventInfo):Void {}
 
 	// @:cffi private static function lime_neko_execute (module:String):Void;
-
 	@:hlNative("lime", "hl_orientation_event_manager_register") private static function lime_orientation_event_manager_register(callback:Void->Void,
 		eventObject:OrientationEventInfo):Void {}
 

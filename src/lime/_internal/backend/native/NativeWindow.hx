@@ -157,7 +157,6 @@ class NativeWindow
 			default:
 				useHardware = false;
 				contextAttributes.hardware = false;
-
 				#if lime_cairo
 				context.cairo = cairo;
 				context.type = CAIRO;

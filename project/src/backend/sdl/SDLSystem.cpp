@@ -448,6 +448,16 @@ namespace lime {
 			strcpy (_displayName, displayName);
 			hl_dyn_setp (display, id_name, &hlt_bytes, _displayName);
 
+			Rectangle safeAreaInsets;
+			Display::GetSafeAreaInsets(id, &safeAreaInsets);
+			vdynamic* _safeArea = (vdynamic*)hl_alloc_dynobj ();
+			hl_dyn_seti (_safeArea, id_x, &hlt_i32, bounds.x + safeAreaInsets.x);
+			hl_dyn_seti (_safeArea, id_y, &hlt_i32, bounds.y + safeAreaInsets.y);
+			hl_dyn_seti (_safeArea, id_width, &hlt_i32, bounds.w - safeAreaInsets.x - safeAreaInsets.width);
+			hl_dyn_seti (_safeArea, id_height, &hlt_i32, bounds.h - safeAreaInsets.y - safeAreaInsets.height);
+
+			hl_dyn_setp (display, id_safeArea, &hlt_dynobj, _safeArea);
+
 			SDL_Rect bounds = { 0, 0, 0, 0 };
 			SDL_GetDisplayBounds (id, &bounds);
 
@@ -477,7 +487,6 @@ namespace lime {
 
 			SDL_DisplayOrientation orientation = SDL_GetDisplayOrientation(id);
 			hl_dyn_seti (display, id_orientation, &hlt_i32, orientation);
-
 			SDL_DisplayMode displayMode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
 			DisplayMode mode;
 
