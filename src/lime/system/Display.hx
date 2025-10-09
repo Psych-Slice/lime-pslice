@@ -35,5 +35,17 @@ class Display
 	**/
 	public var supportedModes(default, null):Array<DisplayMode>;
 
+	/**
+	 * Orientation of the display
+	 */
+	public var orientation(default, null):Orientation;
+
+	/**
+	The area within the display's `bounds` where it is safe to render
+	content without being obscured by notches, holes, or other display
+	cutouts.
+	**/
+	public var safeArea(default, null):Rectangle;
+
 	@:noCompletion private function new() {}
 }

@@ -132,6 +132,7 @@ class NativeWindow
 				var gl = new NativeOpenGLRenderContext();
 
 				useHardware = true;
+				contextAttributes.hardware = true;
 
 				#if lime_opengl
 				context.gl = gl;
@@ -155,7 +156,8 @@ class NativeWindow
 
 			default:
 				useHardware = false;
-
+				contextAttributes.hardware = false;
+				
 				#if lime_cairo
 				context.cairo = cairo;
 				context.type = CAIRO;

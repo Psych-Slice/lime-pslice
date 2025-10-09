@@ -34,6 +34,8 @@ class Application extends Module
 	**/
 	public static var current(default, null):Application;
 
+	public var deviceOrientation(get, never):Orientation;
+
 	/**
 		Meta-data values for the application, such as a version or a package name
 	**/
@@ -53,6 +55,21 @@ class Application extends Module
 		Dispatched when a new window has been created by this application
 	**/
 	public var onCreateWindow = new Event<Window->Void>();
+
+
+	/**
+		Dispatched when the orientation of the display has changed.
+	**/
+	public var onDisplayOrientationChange = new Event<Int->Orientation->Void>();
+
+
+	/**
+		Dispatched when the orientation of the device has changed. Typically,
+		the display and device orientation values are the same. However, if the
+		display orientation is locked to portrait or landscape, the display and
+		device orientations may be different.
+	**/
+	public var onDeviceOrientationChange = new Event<Orientation->Void>();
 
 	/**
 		The Preloader for the current Application
@@ -631,6 +648,11 @@ class Application extends Module
 	@:noCompletion private inline function get_windows():Array<Window>
 	{
 		return __windows;
+	}
+
+	@:noCompletion private function get_deviceOrientation():Orientation
+	{
+		return __backend.getDeviceOrientation();
 	}
 }
 

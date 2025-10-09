@@ -309,6 +309,23 @@ class System
 			#if flash
 			display.dpi = Capabilities.screenDPI;
 			display.currentMode = new DisplayMode(Std.int(Capabilities.screenResolutionX), Std.int(Capabilities.screenResolutionY), 60, ARGB32);
+			#if air
+			switch (flash.Lib.current.stage.orientation) {
+				case DEFAULT:
+					display.orientation = PORTRAIT;
+				case UPSIDE_DOWN:
+					display.orientation = PORTRAIT_FLIPPED;
+				case ROTATED_LEFT:
+					display.orientation = LANDSCAPE_FLIPPED;
+				case ROTATED_RIGHT:
+					display.orientation = LANDSCAPE;
+				default:
+					display.orientation = UNKNOWN;
+			}
+
+			#else
+			display.orientation = UNKNOWN;
+			#end
 			#elseif (js && html5)
 			// var div = Browser.document.createElement ("div");
 			// div.style.width = "1in";
@@ -318,6 +335,26 @@ class System
 			// display.dpi = Std.parseFloat (ppi);
 			display.dpi = 96 * Browser.window.devicePixelRatio;
 			display.currentMode = new DisplayMode(Browser.window.screen.width, Browser.window.screen.height, 60, ARGB32);
+			if (Browser.window.screen.orientation != null)
+			{
+				switch (Browser.window.screen.orientation.type)
+				{
+					case PORTRAIT_PRIMARY:
+						display.orientation = PORTRAIT;
+					case PORTRAIT_SECONDARY:
+						display.orientation = PORTRAIT_FLIPPED;
+					case LANDSCAPE_PRIMARY:
+						display.orientation = LANDSCAPE;
+					case LANDSCAPE_SECONDARY:
+						display.orientation = LANDSCAPE_FLIPPED;
+					default:
+						display.orientation = UNKNOWN;
+				}
+			}
+			else
+			{
+				display.orientation = UNKNOWN;
+			}
 			#end
 
 			display.supportedModes = [display.currentMode];

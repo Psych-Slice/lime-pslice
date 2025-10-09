@@ -14,6 +14,7 @@ import lime.ui.Gamepad;
 import lime.ui.GamepadButton;
 import lime.ui.Joystick;
 import lime.ui.Window;
+import lime.system.Orientation;
 
 @:access(lime._internal.backend.html5.HTML5Window)
 @:access(lime.app.Application)
@@ -349,6 +350,33 @@ class HTML5Application
 	}
 
 	public function exit():Void {}
+
+	public function getDeviceOrientation():Orientation
+	{
+		if (Browser.window.screen.orientation != null)
+		{
+			switch (Browser.window.screen.orientation.type)
+
+			{
+				case PORTRAIT_PRIMARY:
+					return PORTRAIT;
+
+				case PORTRAIT_SECONDARY:
+					return PORTRAIT_FLIPPED;
+
+				case LANDSCAPE_PRIMARY:
+					return LANDSCAPE;
+
+				case LANDSCAPE_SECONDARY:
+					return LANDSCAPE_FLIPPED;
+
+				default:
+					// fall through to unknown
+			}
+		}
+
+		return UNKNOWN;
+	}
 
 	private function handleApplicationEvent(?__):Void
 	{
