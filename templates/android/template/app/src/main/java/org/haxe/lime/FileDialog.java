@@ -69,7 +69,7 @@ public class FileDialog extends Extension
 
 	public static FileDialog createInstance(final HaxeObject haxeObject)
 	{
-		return GameActivity.creatFileDialog(haxeObject);
+		return GameActivity.createFileDialog(haxeObject);
 	}
 
 	public void open(String filter, String defaultPath, String title)
