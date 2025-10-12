@@ -18,7 +18,7 @@ jobs:
         uses: nttld/setup-ndk@main
         id: ndk
         with:
-          ndk-version: r27c
+          ndk-version: r25c
       - name: Setup Haxe
         uses: krdlab/setup-haxe@master
         with:
