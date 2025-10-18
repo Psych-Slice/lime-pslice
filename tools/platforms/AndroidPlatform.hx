@@ -229,7 +229,7 @@ class AndroidPlatform extends PlatformTarget
 			}
 		}
 
-		if (!hasX64)
+		if (!hasARM64)
 		{
 			if (FileSystem.exists(sourceSet + "/jniLibs/arm64-v8a"))
 			{
