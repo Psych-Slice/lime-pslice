@@ -74,6 +74,13 @@ android {
 			signingConfig signingConfigs.release
 		}
 	}
+	::if PSLICE_FIREBASE_SDK::
+	externalNativeBuild{
+		cmake{
+			path "CMakeLists.txt"
+		}
+	}
+	::end::
 
 	android.applicationVariants.all { variant ->
 		variant.outputs.all { output ->
@@ -89,10 +96,26 @@ dependencies {
 	implementation "androidx.core:core:1.15.0"
 	implementation "androidx.documentfile:documentfile:1.1.0"
 	::end::
+
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
 	::if (ANDROID_LIBRARY_PROJECTS)::::foreach (ANDROID_LIBRARY_PROJECTS)::implementation project(':deps:::name::')
 	::end::::end::
 }
+
+::if PSLICE_FIREBASE_SDK::
+android.defaultConfig.externalNativeBuild.cmake {
+arguments "-DFIREBASE_CPP_SDK_DIR=$gradle.firebase_cpp_sdk_dir"
+}
+
+// Add the dependencies for the Firebase products you want to use in your app
+// For example, to use Firebase Authentication and Firebase Realtime Database
+apply from: "$gradle.firebase_cpp_sdk_dir/Android/firebase_dependencies.gradle"
+firebaseCpp.dependencies {
+  analytics
+  auth
+  database
+}
+::end::
 
 def getPassword(message) {
 	def password = '';

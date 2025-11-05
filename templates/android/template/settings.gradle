@@ -1,3 +1,10 @@
 include ':app'
 ::if (ANDROID_LIBRARY_PROJECTS)::::foreach (ANDROID_LIBRARY_PROJECTS)::include ':deps:::name::'
 ::end::::end::
+
+::if PSLICE_FIREBASE_SDK::
+def firebase_cpp_sdk_dir = System.getProperty('firebase_cpp_sdk.dir')
+
+gradle.ext.firebase_cpp_sdk_dir = "$firebase_cpp_sdk_dir"
+includeBuild "$firebase_cpp_sdk_dir"
+::end::
