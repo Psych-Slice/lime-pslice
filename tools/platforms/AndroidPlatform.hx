@@ -605,6 +605,10 @@ class AndroidPlatform extends PlatformTarget
 			}
 		}
 		// P-Slice exclusive
+		if (project.config.exists("android.pslice-firebase-sdk-path"))
+		{
+			context.PSLICE_FIREBASE_SDK = project.config.getString("android.pslice-firebase-sdk-path");
+		}
 		// if (project.config.exists("android.round-icon"))
 		// {
 		// 	var icons = [new Icon(project.config.getString("android.round-icon"))];

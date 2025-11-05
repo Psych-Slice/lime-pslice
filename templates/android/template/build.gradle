@@ -7,6 +7,9 @@ buildscript {
 	}
 	dependencies {
 		classpath 'com.android.tools.build:gradle:::ANDROID_GRADLE_PLUGIN::'
+		::if PSLICE_FIREBASE_SDK::
+		classpath 'com.google.gms:google-services:4.4.4'  // Google Services plugin
+		::end::
 
 		// NOTE: Do not place your application dependencies here; they belong
 		// in the individual module build.gradle files
@@ -42,7 +45,9 @@ configure(subprojects.findAll {!it.file('build.gradle').exists() && it.file('bui
 	}
 
 	apply plugin: 'android-library'
-
+	::if PSLICE_FIREBASE_SDK::
+	apply plugin: 'com.google.gms.google-services'
+	::end::
 	android {
 		compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
 		buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
