@@ -74,6 +74,7 @@ android {
 		release {
 			minifyEnabled false
 			signingConfig signingConfigs.release
+			::if PSLICE_FIREBASE_SDK::
 			firebaseCrashlytics {
               // Enable processing and uploading of native symbols to Firebase servers.
               // By default, this is disabled to improve build speeds.
@@ -82,6 +83,7 @@ android {
               nativeSymbolUploadEnabled true
               unstrippedNativeLibsDir = file("../unstrippedLibs")
           }
+		  ::end::
 		}
 	}
 
@@ -98,15 +100,6 @@ dependencies {
 	::if (ANDROID_USE_ANDROIDX)::
 	implementation "androidx.core:core:1.15.0"
 	implementation "androidx.documentfile:documentfile:1.1.0"
-	::end::
-	::if PSLICE_FIREBASE_SDK::
-	// Import the BoM for the Firebase platform
-    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
-
-    // Add the dependencies for the Crashlytics NDK and Analytics libraries
-    // When using the BoM, you don't specify versions in Firebase library dependencies
-    implementation("com.google.firebase:firebase-crashlytics-ndk")
-    implementation("com.google.firebase:firebase-analytics")
 	::end::
 
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
