@@ -443,6 +443,10 @@ class IOSPlatform extends PlatformTarget
 			context.HAXELIB_PATH = '';
 		}
 
+		context.CATEGORY_TYPE = project.config.getString("ios.category_type", "public.app-category.entertainment");
+
+		context.SHARE_FILES = project.haxedefs.exists("SHARE_MOBILE_FILES");
+
 		return context;
 	}
 
@@ -580,21 +584,28 @@ class IOSPlatform extends PlatformTarget
 
 		var iconPath = Path.combine(projectDirectory, "Images.xcassets/AppIcon.appiconset");
 		System.mkdir(iconPath);
-
-		var icons = project.icons;
-
-		if (icons.length == 0)
-		{
-			icons = [new Icon(System.findTemplate(project.templatePaths, "default/icon.svg"))];
+		//* P-Slice code
+		if(!project.config.exists("ios.pslice-icon-dir")){
+			Log.error("You need to set \"ios.pslice-icon-dir\" to a folder with your icon. Yes, we need that too now!");
+			return;
 		}
+		System.recursiveCopy(project.config.getString("ios.pslice-icon-dir"),iconPath);
+		//*
 
-		for (iconSize in iconSizes)
-		{
-			if (!IconHelper.createIcon(icons, iconSize.size, iconSize.size, Path.combine(iconPath, iconSize.name)))
-			{
-				context.HAS_ICON = false;
-			}
-		}
+		// var icons = project.icons;
+
+		// if (icons.length == 0)
+		// {
+		// 	icons = [new Icon(System.findTemplate(project.templatePaths, "default/icon.svg"))];
+		// }
+
+		// for (iconSize in iconSizes)
+		// {
+		// 	if (!IconHelper.createIcon(icons, iconSize.size, iconSize.size, Path.combine(iconPath, iconSize.name)))
+		// 	{
+		// 		context.HAS_ICON = false;
+		// 	}
+		// }
 
 		if (project.launchStoryboard != null)
 		{
@@ -861,24 +872,20 @@ class IOSPlatform extends PlatformTarget
 
 		for (asset in project.assets)
 		{
-			if (asset.type != AssetType.TEMPLATE)
+			if (asset.embed != true)
 			{
-				var targetPath = Path.combine(projectDirectory + "/assets/", asset.resourceName);
-
-				// var sourceAssetPath:String = projectDirectory + "haxe/" + asset.sourcePath;
-
-				System.mkdir(Path.directory(targetPath));
-				AssetHelper.copyAssetIfNewer(asset, targetPath);
-
-				// System.mkdir (Path.directory (sourceAssetPath));
-				// System.linkFile (flatAssetPath, sourceAssetPath, true, true);
-			}
-			else
-			{
-				var targetPath = Path.combine(projectDirectory, asset.targetPath);
-
-				System.mkdir(Path.directory(targetPath));
-				AssetHelper.copyAsset(asset, targetPath, context);
+				if (asset.type != AssetType.TEMPLATE)
+				{
+					var targetPath = Path.combine(projectDirectory + "/assets/", asset.resourceName);
+					System.mkdir(Path.directory(targetPath));
+					AssetHelper.copyAssetIfNewer(asset, targetPath);
+				}
+				else
+				{
+					var targetPath = Path.combine(projectDirectory, asset.targetPath);
+					System.mkdir(Path.directory(targetPath));
+					AssetHelper.copyAsset(asset, targetPath, context);
+				}
 			}
 		}
 

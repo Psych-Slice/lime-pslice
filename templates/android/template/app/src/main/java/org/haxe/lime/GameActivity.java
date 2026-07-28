@@ -188,48 +188,8 @@ public class GameActivity extends SDLActivity {
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 
-		orientationListener = new OrientationEventListener(this) {
-
-			public void onOrientationChanged(int degrees) {
-
-				int orientation = SDL_ORIENTATION_UNKNOWN;
-				if (degrees >= 315 || (degrees >= 0 && degrees < 45))
-				{
-					orientation = SDL_ORIENTATION_PORTRAIT;
-				}
-				else if	(degrees >= 45 && degrees < 135)
-				{
-					orientation = SDL_ORIENTATION_LANDSCAPE_FLIPPED;
-				}
-				else if	(degrees >= 135 && degrees < 225)
-				{
-					orientation = SDL_ORIENTATION_PORTRAIT_FLIPPED;
-				}
-				else if	(degrees >= 225 && degrees < 315)
-				{
-					orientation = SDL_ORIENTATION_LANDSCAPE;
-				}
-
-				if (deviceOrientation != orientation) {
-					deviceOrientation = orientation;
-					if (deviceOrientationListener != null)
-					{
-						deviceOrientationListener.call1("onOrientationChanged", deviceOrientation);
-					}
-				}
-
-			}
-
-		};
-
-		assetManager = getAssets ();
-
-		if (checkSelfPermission(Manifest.permission.VIBRATE) == PackageManager.PERMISSION_GRANTED) {
-
-			vibrator = (Vibrator)mSingleton.getSystemService (Context.VIBRATOR_SERVICE);
-
-		}
 			getWindow ().addFlags (WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+		}
 
 		super.onCreate (state);
 

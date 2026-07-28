@@ -6,6 +6,7 @@
 #include <system/System.h>
 #include <system/OrientationEvent.h>
 
+
 #ifdef IPHONE
 @interface OrientationObserver: NSObject
 - (id) init;
@@ -184,42 +185,6 @@ namespace lime {
 
 	}
 
-	int System::GetDeviceOrientation () {
-
-		UIDevice * device = [UIDevice currentDevice];
-
-		int orientation = 0; // SDL_ORIENTATION_UNKNOWN
-		switch (device.orientation)
-		{
-
-			case UIDeviceOrientationLandscapeLeft:
-
-				orientation = 1; // SDL_ORIENTATION_LANDSCAPE
-				break;
-
-			case UIDeviceOrientationLandscapeRight:
-
-				orientation = 2; // SDL_ORIENTATION_LANDSCAPE_FLIPPED
-				break;
-
-			case UIDeviceOrientationPortrait:
-
-				orientation = 3; // SDL_ORIENTATION_PORTRAIT
-				break;
-
-			case UIDeviceOrientationPortraitUpsideDown:
-
-				orientation = 4; // SDL_ORIENTATION_PORTRAIT_FLIPPED
-				break;
-
-			default:
-
-				break;
-		};
-
-		return orientation;
-
-	}
 
 	int System::GetDeviceOrientation () {
 
@@ -307,27 +272,6 @@ namespace lime {
 
 	}
 
-	void System::EnableDeviceOrientationChange (bool enable) {
-
-		#ifdef IPHONE
-		if (enable && !orientationObserver)
-		{
-
-			orientationObserver = [[OrientationObserver alloc] init];
-			// SDL forces dispatch of a display orientation event immediately.
-			// for consistency, we should dispatch one for device orientation.
-			[orientationObserver dispatchEventForCurrentDevice];
-
-		}
-		else if (!enable && orientationObserver)
-		{
-
-			orientationObserver = nil;
-
-		}
-		#endif
-
-	}
 
 	void System::EnableDeviceOrientationChange (bool enable) {
 

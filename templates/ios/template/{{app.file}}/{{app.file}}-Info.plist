@@ -2,6 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	::if (SHARE_FILES)::
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	::end::
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>LSApplicationCategoryType</key>
+	<string>::CATEGORY_TYPE::</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>To play with controller accept bluetooth permission.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	::if (languages != null)::<key>CFBundleLocalizations</key>
