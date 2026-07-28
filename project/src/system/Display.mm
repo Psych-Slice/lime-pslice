@@ -12,8 +12,6 @@ namespace lime {
 
 	void Display::GetSafeAreaInsets (int displayIndex, Rectangle * rect) {
 
-	void Display::GetSafeAreaInsets (int displayIndex, Rectangle * rect) {
-
 		#ifdef HX_MACOS
 
 		if (@available(macOS 12, *)) {

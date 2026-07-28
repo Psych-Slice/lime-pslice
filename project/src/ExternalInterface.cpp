@@ -2656,19 +2656,6 @@ namespace lime {
 
 	}
 
-	void lime_orientation_event_manager_register (value callback, value eventObject) {
-
-		OrientationEvent::callback = new ValuePointer (callback);
-		OrientationEvent::eventObject = new ValuePointer (eventObject);
-		System::EnableDeviceOrientationChange(true);
-	}
-
-	HL_PRIM void HL_NAME(hl_orientation_event_manager_register) (vclosure* callback, OrientationEvent* eventObject) {
-
-		OrientationEvent::callback = new ValuePointer (callback);
-		OrientationEvent::eventObject = new ValuePointer ((vobj*)eventObject);
-
-	}
 
 	void lime_orientation_event_manager_register (value callback, value eventObject) {
 
@@ -2973,24 +2960,6 @@ namespace lime {
 
 	}
 
-	int lime_system_get_device_orientation () {
-
-		return System::GetDeviceOrientation();
-
-	}
-
-
-
-
-
-
-
-
-	HL_PRIM int HL_NAME(hl_system_get_device_orientation) () {
-
-		return System::GetDeviceOrientation();
-
-	}
 
 	int lime_system_get_device_orientation () {
 
