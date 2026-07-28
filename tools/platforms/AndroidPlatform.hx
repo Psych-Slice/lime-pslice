@@ -84,7 +84,7 @@ class AndroidPlatform extends PlatformTarget
 
 		if (project.targetFlags.exists("simulator") || project.targetFlags.exists("emulator"))
 		{
-			defaults.architectures = [Architecture.X86];
+			defaults.architectures = [Architecture.X64, Architecture.ARM64];
 		}
 		else
 		{
@@ -142,7 +142,7 @@ class AndroidPlatform extends PlatformTarget
 		var hasX86 = ArrayTools.containsValue(project.architectures, Architecture.X86);
 		var hasX64 = ArrayTools.containsValue(project.architectures, Architecture.X64);
 
-		var architectures = [];
+		var architectures:Array<Architecture> = [];
 
 		if (hasARMV5) architectures.push(Architecture.ARMV5);
 		if (hasARMV7) architectures.push(Architecture.ARMV7);
@@ -161,8 +161,10 @@ class AndroidPlatform extends PlatformTarget
 
 		for (architecture in architectures)
 		{
-			var haxeParams = [hxml, "-D", "android", "-D", "PLATFORM=android-21"];
-			var cppParams = ["-Dandroid", "-DPLATFORM=android-21"];
+			var minSDKVer = project.config.getInt("android.minimum-sdk-version", 21);
+			//PLATFORM define needed for older ndk and gcc toolchain
+			var haxeParams = [hxml, "-D", "android", "-D", 'PLATFORM_NUMBER=$minSDKVer', "-D", 'PLATFORM=android-$minSDKVer'];
+			var cppParams = ["-Dandroid", '-DPLATFORM_NUMBER=$minSDKVer', '-DPLATFORM=android-$minSDKVer'];
 			var path = sourceSet + "/jniLibs/armeabi";
 			var suffix = ".so";
 
@@ -206,7 +208,7 @@ class AndroidPlatform extends PlatformTarget
 
 			System.runCommand("", "haxe", haxeParams);
 
-			if (noOutput) return;
+			if (noOutput) continue;
 
 			CPPHelper.compile(project, targetDirectory + "/obj", cppParams);
 
@@ -229,7 +231,7 @@ class AndroidPlatform extends PlatformTarget
 			}
 		}
 
-		if (!hasX64)
+		if (!hasARM64)
 		{
 			if (FileSystem.exists(sourceSet + "/jniLibs/arm64-v8a"))
 			{
@@ -281,7 +283,7 @@ class AndroidPlatform extends PlatformTarget
 				build = "-release";
 			}
 
-			var outputDirectory = null;
+			var outputDirectory:String = null;
 			if (project.config.exists("android.gradle-build-directory"))
 			{
 				outputDirectory = Path.combine(project.config.getString("android.gradle-build-directory"), project.app.file + "/app/outputs/apk");
@@ -345,7 +347,7 @@ class AndroidPlatform extends PlatformTarget
 			}
 		}
 
-		var outputDirectory = null;
+		var outputDirectory:String = null;
 
 		if (project.config.exists("android.gradle-build-directory"))
 		{
@@ -368,39 +370,20 @@ class AndroidPlatform extends PlatformTarget
 			|| ArrayTools.containsValue(project.architectures, Architecture.ARMV6));
 		var armv7 = (command == "rebuild" || ArrayTools.containsValue(project.architectures, Architecture.ARMV7));
 		var arm64 = (command == "rebuild" || ArrayTools.containsValue(project.architectures, Architecture.ARM64));
-		var x86 = (command == "rebuild" || ArrayTools.containsValue(project.architectures, Architecture.X86));
-		var x64 = (/*command == "rebuild" ||*/ ArrayTools.containsValue(project.architectures, Architecture.X64));
+		var x86 = (ArrayTools.containsValue(project.architectures, Architecture.X86));
+		var x64 = (command == "rebuild" || ArrayTools.containsValue(project.architectures, Architecture.X64));
 
-		var commands = [];
-
+		var commands:Array<Array<String>> = [];
 		var minSDKVer = 21;
-		var platformDefine = '-DHXCPP_ANDROID_PLATFORM=$minSDKVer';
+		var platformNumberDefine = '-DPLATFORM_NUMBER=$minSDKVer';
+		// Required for older ndk and gcc toolchain
+		var platformDefine = '-DPLATFORM=android-$minSDKVer';
 
-		if (project.targetFlags.exists("ONLY_ARM64"))
-		{
-			arm64 = true;
-			armv7 = x86 = x64 = false;
-		}
-		else if (project.targetFlags.exists("ONLY_ARMV7"))
-		{
-			armv7 = true;
-			arm64 = x86 = x64 = false;
-		}
-		else if (project.targetFlags.exists("ONLY_X86_64"))
-		{
-			x64 = true;
-			arm64 = armv7 = x86 = false;
-		}
-		else if (project.targetFlags.exists("ONLY_X86"))
-		{
-			x86 = true;
-			arm64 = armv7 = x64 = false;
-		}
-
-		if (arm64) commands.push(["-Dandroid", "-DHXCPP_ARM64", platformDefine]);
-		if (armv7) commands.push(["-Dandroid", "-DHXCPP_ARMV7", platformDefine]);
-		if (x64) commands.push(["-Dandroid", "-DHXCPP_X86_64", platformDefine]);
-		if (x86) commands.push(["-Dandroid", "-DHXCPP_X86", platformDefine]);
+		if (armv5) commands.push(["-Dandroid", platformDefine]);
+		if (armv7) commands.push(["-Dandroid", "-DHXCPP_ARMV7", platformDefine, platformNumberDefine]);
+		if (arm64) commands.push(["-Dandroid", "-DHXCPP_ARM64", platformDefine, platformNumberDefine]);
+		if (x86) commands.push(["-Dandroid", "-DHXCPP_X86", platformDefine, platformNumberDefine]);
+		if (x64) commands.push(["-Dandroid", "-DHXCPP_X86_64", platformDefine, platformNumberDefine]);
 
 		CPPHelper.rebuild(project, commands);
 	}
@@ -447,20 +430,47 @@ class AndroidPlatform extends PlatformTarget
 		System.mkdir(sourceSet + "/res/drawable-hdpi/");
 		System.mkdir(sourceSet + "/res/drawable-xhdpi/");
 
+		for (asset in project.assets)
+		{
+			if (asset.type != AssetType.TEMPLATE)
+			{
+				var targetPath = "";
+
+				switch (asset.type)
+				{
+					default:
+						// case SOUND, MUSIC:
+
+						// var extension = Path.extension (asset.sourcePath);
+						// asset.flatName += ((extension != "") ? "." + extension : "");
+
+						// asset.resourceName = asset.flatName;
+						targetPath = Path.combine(sourceSet + "/assets/", asset.resourceName);
+
+						// asset.resourceName = asset.id;
+						// targetPath = sourceSet + "/res/raw/" + asset.flatName + "." + Path.extension (asset.targetPath);
+
+						// default:
+
+						// asset.resourceName = asset.flatName;
+						// targetPath = sourceSet + "/assets/" + asset.resourceName;
+				}
+
+				AssetHelper.copyAssetIfNewer(asset, targetPath);
+			}
+		}
+
 		if (project.targetFlags.exists("xml"))
 		{
 			project.haxeflags.push("-xml " + targetDirectory + "/types.xml");
 		}
 
-		var context = project.templateContext;
-
-		for (asset in project.assets)
+		if (project.targetFlags.exists("json"))
 		{
-			if (asset.embed != true && asset.type != AssetType.TEMPLATE)
-			{
-				AssetHelper.copyAssetIfNewer(asset, Path.combine(sourceSet + "/assets/", asset.resourceName));
-			}
+			project.haxeflags.push("--json " + targetDirectory + "/types.json");
 		}
+
+		var context = project.templateContext;
 
 		context.CPP_DIR = targetDirectory + "/obj";
 		context.OUTPUT_DIR = targetDirectory;
@@ -472,48 +482,33 @@ class AndroidPlatform extends PlatformTarget
 			"android.permission.WAKE_LOCK",
 			"android.permission.INTERNET",
 			"android.permission.VIBRATE",
-			"android.permission.ACCESS_NETWORK_STATE",
-			"android.permission.ACCESS_MEDIA_LOCATION",
-			"android.permission.MANAGE_EXTERNAL_STORAGE",
-			"android.permission.READ_MEDIA_IMAGES",
-			"android.permission.READ_MEDIA_VIDEO",
-			"android.permission.READ_MEDIA_AUDIO",
-			"android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-			"android.permission.READ_EXTERNAL_STORAGE",
-			"android.permission.WRITE_EXTERNAL_STORAGE"
+			"android.permission.ACCESS_NETWORK_STATE"
 		]);
-		context.ANDROID_GRADLE_VERSION = project.config.getString("android.gradle-version", "8.10.2");
-		context.ANDROID_GRADLE_PLUGIN = project.config.getString("android.gradle-plugin", "8.8.0");
+		context.ANDROID_GRADLE_VERSION = project.config.getString("android.gradle-version", "8.9");
+		context.ANDROID_GRADLE_PLUGIN = project.config.getString("android.gradle-plugin", "8.7.3");
 		context.ANDROID_USE_ANDROIDX = project.config.getString("android.useAndroidX", "true");
 		context.ANDROID_ENABLE_JETIFIER = project.config.getString("android.enableJetifier", "false");
-		context.ANDROID_DISPLAY_CUTOUT = project.config.getString("android.layoutInDisplayCutoutMode", "shortEdges");
+		context.ANDROID_GRADLE_PROPERTIES = project.config.getKeyValueArray("android.gradle-properties");
+		context.ANDROID_DISPLAY_CUTOUT = project.config.getString("android.layoutInDisplayCutoutMode", "default");
 
 		context.ANDROID_APPLICATION = project.config.getKeyValueArray("android.application", {
 			"android:label": project.meta.title,
-			"android:appCategory":"game",
 			"android:allowBackup": "true",
 			"android:theme": "@android:style/Theme.NoTitleBar" + (project.window.fullscreen ? ".Fullscreen" : ""),
 			"android:hardwareAccelerated": "true",
-			"android:appCategory": "game" ,
-			"android:allowNativeHeapPointerTagging": context.ANDROID_TARGET_SDK_VERSION >= 30 ? "false" : null,
-			"android:requestLegacyExternalStorage": context.ANDROID_TARGET_SDK_VERSION >= 29 ? "true" : null,
-			"android:preserveLegacyExternalStorage": context.ANDROID_TARGET_SDK_VERSION >= 30 ? "true" : null,
-			"android:largeHeap": "true"
+			"android:allowNativeHeapPointerTagging": context.ANDROID_TARGET_SDK_VERSION >= 30 ? "false" : null
 		});
 		context.ANDROID_ACTIVITY = project.config.getKeyValueArray("android.activity", {
 			"android:name": "MainActivity",
 			"android:exported": "true",
 			"android:launchMode": "singleTask",
 			"android:label": project.meta.title,
-			"android:resizeableActivity": '${project.window.resizable}',
 			"android:configChanges": project.config.getArrayString("android.configChanges",
-				["layoutDirection", "locale", "grammaticalGender", "fontScale", "fontWeightAdjustment", "orientation", "uiMode", "screenLayout", "screenSize", "smallestScreenSize", "keyboard", "keyboardHidden", "navigation"])
+				["layoutDirection", "locale", "orientation", "uiMode", "screenLayout", "screenSize", "smallestScreenSize", "keyboard", "keyboardHidden", "navigation"])
 				.join("|"),
 			"android:screenOrientation": project.window.orientation == PORTRAIT ? "sensorPortrait" : (project.window.orientation == LANDSCAPE ? "sensorLandscape" : null)
 		});
 		context.ANDROID_ACCEPT_FILE_INTENT = project.config.getArrayString("android.accept-file-intent", []);
-
-		context.SHARE_FILES = project.haxedefs.exists("SHARE_MOBILE_FILES");
 
 		if (!project.environment.exists("ANDROID_SDK") || !project.environment.exists("ANDROID_NDK_ROOT"))
 		{
@@ -523,6 +518,31 @@ class AndroidPlatform extends PlatformTarget
 
 			Log.error("You must define ANDROID_SDK and ANDROID_NDK_ROOT to target Android, please run '" + command + " setup android' first");
 			Sys.exit(1);
+		}
+		else
+		{
+			var sdkPath = project.environment.get("ANDROID_SDK");
+			if (!FileSystem.exists(sdkPath))
+			{
+				Log.error("The path specified for ANDROID_SDK does not exist: " + sdkPath);
+				Sys.exit(1);
+			}
+			if (!FileSystem.isDirectory(sdkPath))
+			{
+				Log.error("The path specified for ANDROID_SDK must be a directory: " + sdkPath);
+				Sys.exit(1);
+			}
+			var ndkPath = project.environment.get("ANDROID_NDK_ROOT");
+			if (!FileSystem.exists(ndkPath))
+			{
+				Log.error("The path specified for ANDROID_NDK_ROOT does not exist: " + ndkPath);
+				Sys.exit(1);
+			}
+			if (!FileSystem.isDirectory(ndkPath))
+			{
+				Log.error("The path specified for ANDROID_NDK_ROOT must be a directory: " + ndkPath);
+				Sys.exit(1);
+			}
 		}
 
 		if (project.config.exists("android.gradle-build-directory"))
@@ -604,26 +624,7 @@ class AndroidPlatform extends PlatformTarget
 				break;
 			}
 		}
-		// P-Slice exclusive
-		// if (project.config.exists("android.round-icon"))
-		// {
-		// 	var icons = [new Icon(project.config.getString("android.round-icon"))];
-		// 	var iconTypes = ["ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"];
-		// 	var iconSizes = [36, 48, 72, 96, 144, 192];
-		// 	for (i in 0...iconTypes.length)
-		// 	{
-		// 		// create multiple icons, only set "android:icon" once
-		// 		if (IconHelper.createIcon(icons, iconSizes[i], iconSizes[i], sourceSet + "/res/mipmap-" + iconTypes[i] + "-v4/ic_launcher_round.png")
-		// 			&& !context.HAS_ROUND_ICON)
-		// 		{
-		// 			context.HAS_ROUND_ICON = true;
-		// 			context.ANDROID_APPLICATION.push({ key: "android:roundIcon", value: "@mipmap/ic_launcher_round" });
-		// 		}
-		// 		// make for Oreo users
-		// 		IconHelper.createIcon(icons, iconSizes[i], iconSizes[i], sourceSet + "/res/drawable-" + iconTypes[i] + "-v4/icon_round.png");
-		// 	}
-		// }
-		//
+
 		if (context.HAS_ICON == null)
 		{
 			var iconTypes = ["ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"];
@@ -637,26 +638,14 @@ class AndroidPlatform extends PlatformTarget
 			for (i in 0...iconTypes.length)
 			{
 				// create multiple icons, only set "android:icon" once
-				if (IconHelper.createIcon(icons, iconSizes[i], iconSizes[i], sourceSet + "/res/mipmap-" + iconTypes[i] + "-v4/ic_launcher.png")
+				if (IconHelper.createIcon(icons, iconSizes[i], iconSizes[i], sourceSet + "/res/drawable-" + iconTypes[i] + "/icon.png")
 					&& !context.HAS_ICON)
 				{
 					context.HAS_ICON = true;
-					context.ANDROID_APPLICATION.push({ key: "android:icon", value: "@mipmap/ic_launcher" });
+					context.ANDROID_APPLICATION.push({ key: "android:icon", value: "@drawable/icon" });
 				}
-				// make for Oreo users
-				IconHelper.createIcon(icons, iconSizes[i], iconSizes[i], sourceSet + "/res/drawable-" + iconTypes[i] + "-v4/icon.png");
 			}
 
-			var icon_xml:String = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<adaptive-icon xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"+
-				"\t<background android:drawable=\"@color/yellow\" />\n"+
-				"\t<foreground android:drawable=\"@drawable/icon\" />\n";
-			if(project.config.exists("android.pslice-mono-icon")){
-				System.copyFile(project.config.get("android.pslice-mono-icon"),sourceSet + "/res/drawable/monochromeicon.png");
-				icon_xml +="\t<monochrome android:drawable=\"@drawable/monochromeicon\" />\n";
-			}
-			icon_xml +="</adaptive-icon>";
-			System.makeDirectory(sourceSet + "/res/mipmap-anydpi-v26/");
-			System.writeText(icon_xml,sourceSet + "/res/mipmap-anydpi-v26/ic_launcher.xml");
 			IconHelper.createIcon(icons, 732, 412, sourceSet + "/res/drawable-xhdpi/ouya_icon.png");
 		}
 

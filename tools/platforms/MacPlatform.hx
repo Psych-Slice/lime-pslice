@@ -129,6 +129,19 @@ class MacPlatform extends PlatformTarget
 		else if (project.targetFlags.exists("hl") || project.targetFlags.exists("hlc"))
 		{
 			targetType = "hl";
+			var hlVer = project.haxedefs.get("hl-ver");
+			if (hlVer == null)
+			{
+				var hlPath = project.defines.get("HL_PATH");
+				if (hlPath == null)
+				{
+					// Haxe's default target version for HashLink may be
+					// different (newer even) than the build of HashLink that
+					// is bundled with Lime. if using Lime's bundled HashLink,
+					// set hl-ver to the correct version
+					project.haxedefs.set("hl-ver", HashlinkHelper.BUNDLED_HL_VER);
+				}
+			}
 		}
 		else if (project.targetFlags.exists("java"))
 		{
@@ -217,7 +230,20 @@ class MacPlatform extends PlatformTarget
 				// compiler command with the `arch -x86_64` command.
 				// if we ever support ARM or Universal binaries, this will
 				// need to be handled differently.
-				var command = ["arch", "-x86_64", compiler, "-O3", "-o", executablePath, "-std=c11", "-Wl,-rpath,@executable_path", "-I", Path.combine(targetDirectory, "obj"), Path.combine(targetDirectory, "obj/ApplicationMain.c")];
+				var command = [
+					"arch", "-x86_64",
+					compiler,
+					"-O3",
+					"-o", executablePath,
+					"-std=c11",
+					"-Wl,-rpath,@executable_path",
+					"-I", Path.combine(targetDirectory, "obj"),
+					Path.combine(targetDirectory, "obj/ApplicationMain.c"),
+					// gcc 14 and clang 22 made incompatible-pointer-types an
+					// error instead of a warning, but it's required for
+					// assignment to Dynamic in Haxe
+					"-Wno-error=incompatible-pointer-types"
+				];
 				for (file in System.readDirectory(executableDirectory))
 				{
 					switch Path.extension(file)
@@ -422,7 +448,7 @@ class MacPlatform extends PlatformTarget
 
 	public override function rebuild():Void
 	{
-		var commands = [];
+		var commands:Array<Array<String>> = [];
 
 		switch (System.hostArchitecture)
 		{
@@ -505,6 +531,11 @@ class MacPlatform extends PlatformTarget
 		if (project.targetFlags.exists("xml"))
 		{
 			project.haxeflags.push("-xml " + targetDirectory + "/types.xml");
+		}
+
+		if (project.targetFlags.exists("json"))
+		{
+			project.haxeflags.push("--json " + targetDirectory + "/types.json");
 		}
 
 		for (asset in project.assets)
@@ -635,6 +666,16 @@ class MacPlatform extends PlatformTarget
 		var limeDirectory = Haxelib.getPath(new Haxelib("lime"), true);
 		var bindir = "Mac64";
 		var bundledHLDirectory = Path.combine(limeDirectory, 'templates/bin/hl/$bindir');
+		if (!FileSystem.exists(bundledHLDirectory))
+		{
+			Log.error('Directory does not exist: $bundledHLDirectory');
+			return;
+		}
+		if (!FileSystem.isDirectory(bundledHLDirectory))
+		{
+			Log.error('Not a directory: $bundledHLDirectory');
+			return;
+		}
 
 		// these are the known directories where Homebrew installs its dependencies
 		// we may need to add more in the future, but this seems to be enough for now

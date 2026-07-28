@@ -102,13 +102,6 @@ class IOSPlatform extends PlatformTarget
 			defaults.windows.push(defaults.window);
 		}
 
-		if (defaults.launchStoryboard == null)
-		{
-			defaults.launchStoryboard = new LaunchStoryboard();
-
-			defaults.launchStoryboard.template = "LaunchScreen.storyboard";
-		}
-
 		defaults.merge(project);
 		project = defaults;
 
@@ -194,6 +187,8 @@ class IOSPlatform extends PlatformTarget
 
 		IOSHelper.getIOSVersion(project);
 		project.haxedefs.set("IPHONE_VER", project.environment.get("IPHONE_VER"));
+
+		project.haxedefs.set("HXCPP_CPP11", "1");
 
 		if (project.config.getString("ios.compiler") == "llvm" || project.config.getString("ios.compiler", "clang") == "clang")
 		{
@@ -302,7 +297,7 @@ class IOSPlatform extends PlatformTarget
 		context.VALID_ARCHS = valid_archs.join(" ");
 		context.THUMB_SUPPORT = armv6 ? "GCC_THUMB_SUPPORT = NO;" : "";
 
-		var requiredCapabilities = [];
+		var requiredCapabilities:Array<{name:String, value:Bool}> = [];
 
 		if (!armv6 && armv7)
 		{
@@ -341,25 +336,10 @@ class IOSPlatform extends PlatformTarget
 		context.IOS_COMPILER = project.config.getString("ios.compiler", "clang");
 		context.CPP_BUILD_LIBRARY = project.config.getString("cpp.buildLibrary", "hxcpp");
 
-		var json = Json.parse(File.getContent(Haxelib.getPath(new Haxelib("hxcpp"), true) + "/haxelib.json"));
-
-		var version = Std.string(json.version);
-		var versionSplit = version.split(".");
-
-		while (versionSplit.length > 2)
-			versionSplit.pop();
-
-		if (Std.parseFloat(versionSplit.join(".")) > 3.1)
-		{
-			context.CPP_LIBPREFIX = "lib";
-		}
-		else
-		{
-			context.CPP_LIBPREFIX = "";
-		}
+		context.CPP_CACHE_WORKAROUND = "unset HXCPP_COMPILE_CACHE;";
 
 		context.IOS_LINKER_FLAGS = ["-stdlib=libc++"].concat(project.config.getArrayString("ios.linker-flags"));
-		context.IOS_NON_EXEMPT_ENCRYPTION = project.config.getBool("ios.non-exempt-encryption", true);
+		context.IOS_NON_EXEMPT_ENCRYPTION = project.config.getBool("ios.non-exempt-encryption", false);
 
 		switch (project.window.orientation)
 		{
@@ -384,9 +364,9 @@ class IOSPlatform extends PlatformTarget
 
 		for (dependency in project.dependencies)
 		{
-			var name = null;
-			var path = null;
-			var fileType = null;
+			var name:String = null;
+			var path:String = null;
+			var fileType:String = null;
 
 			if (Path.extension(dependency.name) == "framework")
 			{
@@ -437,7 +417,7 @@ class IOSPlatform extends PlatformTarget
 
 		if (allowInsecureHTTP != "*" && allowInsecureHTTP != "true")
 		{
-			var sites = [];
+			var sites:Array<{domain: String}> = [];
 
 			if (allowInsecureHTTP != "false")
 			{
@@ -462,10 +442,6 @@ class IOSPlatform extends PlatformTarget
 		{
 			context.HAXELIB_PATH = '';
 		}
-
-		context.CATEGORY_TYPE = project.config.getString("ios.category_type", "public.app-category.entertainment");
-
-		context.SHARE_FILES = project.haxedefs.exists("SHARE_MOBILE_FILES");
 
 		return context;
 	}
@@ -507,7 +483,7 @@ class IOSPlatform extends PlatformTarget
 
 		var arc = (project.targetFlags.exists("arc"));
 
-		var commands = [];
+		var commands:Array<Array<String>> = [];
 
 		if (armv6) commands.push(["-Dios", "-DHXCPP_CPP11", "-DHXCPP_ARMV6"]);
 		if (armv7) commands.push(["-Dios", "-DHXCPP_CPP11", "-DHXCPP_ARMV7"]);
@@ -604,35 +580,28 @@ class IOSPlatform extends PlatformTarget
 
 		var iconPath = Path.combine(projectDirectory, "Images.xcassets/AppIcon.appiconset");
 		System.mkdir(iconPath);
-		//* P-Slice code
-		if(!project.config.exists("ios.pslice-icon-dir")){
-			Log.error("You need to set \"ios.pslice-icon-dir\" to a folder with your icon. Yes, we need that too now!");
-			return;
+
+		var icons = project.icons;
+
+		if (icons.length == 0)
+		{
+			icons = [new Icon(System.findTemplate(project.templatePaths, "default/icon.svg"))];
 		}
-		System.recursiveCopy(project.config.getString("ios.pslice-icon-dir"),iconPath);
-		//*
 
-		// var icons = project.icons;
-
-		// if (icons.length == 0)
-		// {
-		// 	icons = [new Icon(System.findTemplate(project.templatePaths, "default/icon.svg"))];
-		// }
-
-		// for (iconSize in iconSizes)
-		// {
-		// 	if (!IconHelper.createIcon(icons, iconSize.size, iconSize.size, Path.combine(iconPath, iconSize.name)))
-		// 	{
-		// 		context.HAS_ICON = false;
-		// 	}
-		// }
+		for (iconSize in iconSizes)
+		{
+			if (!IconHelper.createIcon(icons, iconSize.size, iconSize.size, Path.combine(iconPath, iconSize.name)))
+			{
+				context.HAS_ICON = false;
+			}
+		}
 
 		if (project.launchStoryboard != null)
 		{
 			var sb = project.launchStoryboard;
 
 			var assetsPath = sb.assetsPath;
-			var imagesets = [];
+			var imagesets:Array<ImageSet> = [];
 
 			for (asset in sb.assets)
 			{
@@ -648,7 +617,7 @@ class IOSPlatform extends PlatformTarget
 						var baseImageName = Path.withoutExtension(imageset.name);
 
 						var imageScales = ["1x", "2x", "3x"];
-						var images = [];
+						var images:Array<{idiom:String, filename:String, scale:String}> = [];
 						for (scale in imageScales)
 						{
 							var filename = baseImageName + (scale == "1x" ? "" : "@" + scale) + ".png";
@@ -892,20 +861,24 @@ class IOSPlatform extends PlatformTarget
 
 		for (asset in project.assets)
 		{
-			if (asset.embed != true)
+			if (asset.type != AssetType.TEMPLATE)
 			{
-				if (asset.type != AssetType.TEMPLATE)
-				{
-					var targetPath = Path.combine(projectDirectory + "/assets/", asset.resourceName);
-					System.mkdir(Path.directory(targetPath));
-					AssetHelper.copyAssetIfNewer(asset, targetPath);
-				}
-				else
-				{
-					var targetPath = Path.combine(projectDirectory, asset.targetPath);
-					System.mkdir(Path.directory(targetPath));
-					AssetHelper.copyAsset(asset, targetPath, context);
-				}
+				var targetPath = Path.combine(projectDirectory + "/assets/", asset.resourceName);
+
+				// var sourceAssetPath:String = projectDirectory + "haxe/" + asset.sourcePath;
+
+				System.mkdir(Path.directory(targetPath));
+				AssetHelper.copyAssetIfNewer(asset, targetPath);
+
+				// System.mkdir (Path.directory (sourceAssetPath));
+				// System.linkFile (flatAssetPath, sourceAssetPath, true, true);
+			}
+			else
+			{
+				var targetPath = Path.combine(projectDirectory, asset.targetPath);
+
+				System.mkdir(Path.directory(targetPath));
+				AssetHelper.copyAsset(asset, targetPath, context);
 			}
 		}
 
