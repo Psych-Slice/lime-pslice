@@ -75,6 +75,7 @@ android {
 		release {
 			minifyEnabled false
 			signingConfig signingConfigs.release
+			::if PSLICE_FIREBASE_SDK::
 			firebaseCrashlytics {
               // Enable processing and uploading of native symbols to Firebase servers.
               // By default, this is disabled to improve build speeds.
@@ -83,6 +84,7 @@ android {
               nativeSymbolUploadEnabled true
               unstrippedNativeLibsDir = file("../unstrippedLibs")
           }
+          ::end::
 		}
 	}
 
